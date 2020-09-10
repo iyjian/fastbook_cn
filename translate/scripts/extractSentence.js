@@ -24,28 +24,54 @@ const main = async () => {
       let row = 1
 
       for (let cell of content.cells) {
+        // 重置变量
+        let lastOriginParagraph, lastTranslatedParagraph
+
         if (cell.cell_type === 'markdown') {
           for (let paragraph of cell.source) {
             paragraph = paragraph.trim()
             if (paragraph) {
-              console.log('---')
-              console.log(paragraph)
-              console.log('---')
-              if (/[\u4e00-\u9fa5]/.test(paragraph)) {
-                // 如果存在翻译行，则把翻译行更新到原文行
 
+              if (/[\u4e00-\u9fa5]/.test(paragraph)) {
+                if (!lastOriginParagraph) {
+                  console.log('错误！此行翻译未对应原文')
+                  console.log(`章节：${chapterTitle} 章节序号：${chapterNum} 单元格：${row} 翻译内容：${paragraph}`)
+                } else {
+                  if (/^机器翻译:/.test(paragraph)) {
+                    // 
+                  } else {
+                    // 如果存在非机器翻译的翻译行，则把翻译行更新到原文行
+                    await models.book.update({
+                      manualTranslate: paragraph
+                    }, {
+                      where: {
+                        originParagraph: lastOriginParagraph
+                      }
+                    })                    
+                  }
+                }
               } else {
                 // 原文行
-
+                const isExist = await models.book.findOne({
+                  where: {
+                    originParagraph: paragraph
+                  }
+                })
+                if (isExist) {
+                  // console.log('原文已经记录过！')
+                } else {
+                  await models.book.create({
+                    chapterNum,
+                    chapterTitle,
+                    originRowNum: row,
+                    originParagraph: paragraph,
+                    lastSnapshotDate: moment().format('YYYY-MM-DD HH:mm:ss')
+                  })
+                }
                 lastOriginParagraph = paragraph
               }
-              // models.book.create({
-              //   chapterNum,
-              //   chapterTitle,
-              //   originRowNum: row,
-              //   originParagraph: paragraph,
-              //   lastSnapshotDate: moment().format('YYYY-MM-DD HH:mm:ss')
-              // })
+            } else {
+              // 
             }
           }
         }
