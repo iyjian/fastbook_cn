@@ -2,6 +2,8 @@
 
 const Core = require('@alicloud/pop-core')
 const conf = require('./../conf')
+const models = require('./../models')
+const logger = require('./Logger').getLogger('api')
 
 const client = new Core({
   accessKeyId: conf.ali.accessKeyId,
@@ -10,7 +12,28 @@ const client = new Core({
   apiVersion: '2018-10-12'
 })
 
+
+const translated = async originParagraph => {
+  const row = await models.book.findOne({
+    where: {
+      originParagraph
+    }
+  })
+  if (row) {
+    return row.machineTranslate  
+  } else {
+    return false
+  }
+}
+
 exports.ali_trans = async text => {
+
+  const alreadTranslated = await translated(text)
+
+  if (alreadTranslated) {
+    return alreadTranslated
+  }
+
   const params = {
     "RegionId": "cn-hangzhou",
     "FormatType": "text",
@@ -26,34 +49,17 @@ exports.ali_trans = async text => {
   const response = await client.request('TranslateGeneral', params, requestOption)
 
   if (response.Code !== '200') {
-    console.log(JSON.stringify(response))
-    return ""
+    logger.error(`translateError - ali - ${JSON.stringify(response)}`)
+    return ''
   } else {
+    logger.trace(`translateSuccess - origin: ${text} translated: ${response.Data.Translated}`)
+    await models.book.update({
+      machineTranslate: response.Data.Translated
+    }, {
+      where: {
+        originParagraph: text
+      }
+    })
     return response.Data.Translated
   }
 }
-
-
-// Imports the Google Cloud client library
-// const {Translate} = require('@google-cloud/translate').v2
- 
-
-// const projectId = 'fastai-translate'
-
-// // Instantiates a client
-// const translate = new Translate({projectId})
- 
-// async function quickStart() {
-//   // The text to translate
-//   const text = 'Hello, world!';
- 
-//   // The target language
-//   const target = 'ru';
- 
-//   // Translates some text into Russian
-//   const [translation] = await translate.translate(text, target);
-//   console.log(`Text: ${text}`);
-//   console.log(`Translation: ${translation}`);
-// }
- 
-// quickStart();

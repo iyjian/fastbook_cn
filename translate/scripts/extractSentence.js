@@ -47,7 +47,7 @@ const main = async () => {
                       where: {
                         originParagraph: lastOriginParagraph
                       }
-                    })                    
+                    })
                   }
                 }
               } else {

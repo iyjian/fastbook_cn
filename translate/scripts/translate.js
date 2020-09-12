@@ -3,6 +3,8 @@ const path = require('path')
 const moment = require('moment')
 const models = require('./../models')
 const Translate = require('./../libs/Translate')
+const _ = require('lodash')
+const logger = require('./../libs/Logger').getLogger('api')
 
 const main = async () => {
 
@@ -19,50 +21,105 @@ const main = async () => {
       const chapterNum = matches[1]
       const chapterTitle = matches[2]
 
-      let content = JSON.parse(fs.readFileSync(path.join(__dirname, `${BOOK_PATH}/${file}`)))
+      const filePath = path.join(__dirname, `${BOOK_PATH}/${file}`)
+
+      let content = JSON.parse(fs.readFileSync(filePath))
       
       let row = 1
 
       for (let cell of content.cells) {
+        row++
         // 重置变量
-        let toBeTranslate
+        let lastParagraph, lastParagraphIndex, paragraph = '', translatedRows = 0
 
         if (cell.cell_type === 'markdown') {
-          for (let paragraph of cell.source) {
-            paragraph = paragraph.trim()
-            if (paragraph) {
 
-              if (/[\u4e00-\u9fa5]/.test(paragraph)) {
-                // 看到中文行就表示翻译过了，那就不翻译了
-                toBeTranslate = undefined
-              } else {
-                // 如果有需要翻译的行，则翻译
-                if (toBeTranslate) {
-                  const result = await Translate.ali_trans(toBeTranslate)
-                  console.log(`原文：${toBeTranslate}`)
-                  console.log(`翻译内容：${result}`)
-                  exit()
-                }
-                toBeTranslate = paragraph
-              }
+          let cellSourceCopy = _.cloneDeep(cell.source)
+
+          const cellSourceLength = cell.source.length
+
+          for (let idx in cellSourceCopy) {
+            idx = parseInt(idx)
+            if (cellSourceCopy[idx] === '\n') continue
+            if (!cellSourceCopy[idx]) continue
+
+            if (idx + 1 === cellSourceLength || cellSourceCopy[idx + 1] === '\n') {
+              // 如果下一行是换行或者说这是最后一行了，则表示这是一个段落的结束，需要开始处理此段落
+              paragraph += cellSourceCopy[idx]
             } else {
-              // 
+              // 否则仍然是同一个段落，此时就将此行拼接到现有的段落之上
+              paragraph += cellSourceCopy[idx]
+              continue
             }
+      
+            if (/[\u4e00-\u9fa5]/.test(paragraph)) {
+              /**
+               * TODO: 如何判断是原文段落还是翻译段落，现在是用如果含有中文就算是翻译段落，其实不然，原文中也可能有中文呀
+               * 看到中文段落就表示翻译过了，那就不翻译了
+               * 但是如果看到*不含【机器翻译】*字样结尾的段落表示此段落是人工翻译的，需要更新到原文段落中。
+               */
+              if (!/\[机器翻译\]\n{0,}$/.test(paragraph)) {
+                logger.debug(`newManualTranslate - origin: ${lastParagraph} translate: ${paragraph}`)
+                await models.book.update({
+                  manualTranslate: paragraph
+                }, {
+                  where: {
+                    originParagraph: lastParagraph
+                  }
+                })
+              }
+
+              lastParagraph = undefined
+            } else {
+              // 如果不是中文段落，那就是原文，先记录下来再说哦
+              const isExist = await models.book.findOne({
+                where: {
+                  originParagraph: paragraph
+                }
+              })
+              if (!isExist) {
+                logger.debug(`newParagraph - captured - ${paragraph}`)
+                await models.book.create({
+                  chapterNum,
+                  chapterTitle,
+                  originRowNum: row,
+                  originParagraph: paragraph,
+                  lastSnapshotDate: moment().format('YYYY-MM-DD HH:mm:ss')
+                })
+              }
+              // 如果本段落需要翻译，则翻译，并记录数据库，并更新到原文段落里
+              /**
+               * 机器翻译这个标识符最好放在后面，因为放在前面会影响markdown的格式，
+               * 比如 # This is a title，试想下放在前面markdown格式就错乱了。
+               */
+              // 如果上一行需要翻译，则翻译之
+              if (lastParagraph) {
+                const result = await Translate.ali_trans(lastParagraph)
+                cell.source.splice(lastParagraphIndex + 1 + translatedRows, 0, '\n', '\n', result.replace(/(\n{0,})$/,'[机器翻译]$1'))
+                translatedRows += 3
+              }
+              // 如果是最后一行，也翻译之
+              if (idx === cellSourceLength - 1) {
+                const result = await Translate.ali_trans(paragraph)
+                cell.source.splice(idx + 1 + translatedRows, 0, '\n', '\n', result.replace(/(\n{0,})$/,'[机器翻译]$1'))
+                translatedRows += 3
+              }
+              lastParagraph = paragraph
+              lastParagraphIndex = idx
+              paragraph = ''
+            }
+
           }
+
         }
-        row++
+
       }
+      logger.debug('terminated')
+      fs.writeFileSync(path.join(__dirname, './test.ipynb'), JSON.stringify(content, null, 2))
+      process.exit(0)
     }
   }
 
 }
 
 main()
-
-                    // await models.book.update({
-                    //   manualTranslate: paragraph
-                    // }, {
-                    //   where: {
-                    //     originParagraph: lastOriginParagraph
-                    //   }
-                    // })

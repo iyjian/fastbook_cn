@@ -1,1 +1,5 @@
 node_modules
+logs/*.log
+!logs/.keep
+.env
+scripts/test.ipynb
