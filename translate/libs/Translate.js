@@ -28,18 +28,24 @@ const translated = async originParagraph => {
 
 exports.stat = async () => {
   const rows = await models.book.findAll()
-  let originWords = 0, machineTranslateWords= 0, manualTranslateWords = 0
+  // let originWords = 0, machineTranslateWords= 0, manualTranslateWords = 0
+  const stat = {
+
+  }
   for (let row of rows) {
-    const {originParagraph, machineTranslate, manualTranslate} = row
-    originWords += originParagraph.split(/\s+/).map(o => o.replace(/[^\w]/g, '')).filter(o => o).length
-    if (machineTranslate) machineTranslateWords += machineTranslate.length
-    if (manualTranslate) manualTranslateWords += manualTranslate.length
+    const {originParagraph, machineTranslate, manualTranslate, chapterTitle} = row
+    if (!(chapterTitle in stat)) {
+      stat[chapterTitle] = {
+        originWords: 0,
+        machineTranslateWords: 0,
+        manualTranslateWords: 0
+      }
+    }
+    stat[chapterTitle].originWords += originParagraph.split(/\s+/).map(o => o.replace(/[^\w]/g, '')).filter(o => o).length
+    if (machineTranslate) stat[chapterTitle].machineTranslateWords += machineTranslate.replace(/`~!@#$%\^&\*\(\)_\+=-\\;'":\/\.\,<>\?/g, '').length
+    if (manualTranslate) stat[chapterTitle].manualTranslateWords += manualTranslate.length
   }
-  return {
-    originWords,
-    machineTranslateWords,
-    manualTranslateWords
-  }
+  return stat
 }
 
 exports.ali_trans = async text => {
