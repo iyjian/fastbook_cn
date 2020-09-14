@@ -59,7 +59,7 @@ const main = async () => {
                * 但是如果看到*不含【机器翻译】*字样结尾的段落表示此段落是人工翻译的，需要更新到原文段落中。
                */
               if (!/\[机器翻译\]\n{0,}$/.test(paragraph)) {
-                logger.debug(`newManualTranslate - origin: ${lastParagraph} translate: ${paragraph}`)
+                logger.debug(`----------\nnewManualTranslate \norigin: ${lastParagraph} \ntranslate: ${paragraph}\n----------`)
                 await models.book.update({
                   manualTranslate: paragraph
                 }, {
@@ -115,8 +115,8 @@ const main = async () => {
 
       }
       logger.debug('terminated')
-      fs.writeFileSync(path.join(__dirname, './test.ipynb'), JSON.stringify(content, null, 2))
-      process.exit(0)
+      // fs.writeFileSync(path.join(__dirname, './test.ipynb'), JSON.stringify(content, null, 2))
+      // process.exit(0)
     }
   }
 
