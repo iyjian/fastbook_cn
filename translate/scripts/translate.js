@@ -132,7 +132,6 @@ const main = async () => {
       }
       logger.debug(`the translation of ${chapterNum} - ${chapterTitle} is completed!`)
       if (flag) {
-        console.log('-----', flag)
         fs.writeFileSync(filePath, JSON.stringify(content, null, 2))        
       }
       // process.exit(0)
