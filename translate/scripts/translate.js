@@ -6,6 +6,8 @@ const Translate = require('./../libs/Translate')
 const _ = require('lodash')
 const logger = require('./../libs/Logger').getLogger('api')
 
+const flag = process.argv[1]
+
 const main = async () => {
 
   const BOOK_PATH = './../../'
@@ -69,13 +71,15 @@ const main = async () => {
                   logger.trace(`old manual translate`)
                 } else if (lastParagraph) {
                   logger.debug(`----------\nnewManualTranslate \norigin: ${lastParagraph} \ntranslate: ${paragraph}\n----------`)
-                  await models.book.update({
-                    manualTranslate: paragraph
-                  }, {
-                    where: {
-                      originParagraph: lastParagraph
-                    }
-                  })                  
+                  if (flag) {
+                    await models.book.update({
+                      manualTranslate: paragraph
+                    }, {
+                      where: {
+                        originParagraph: lastParagraph
+                      }
+                    })
+                  }               
                 }
               }
               paragraph = ''
@@ -89,13 +93,15 @@ const main = async () => {
               })
               if (!isExist) {
                 logger.debug(`newParagraph - captured - ${paragraph}`)
-                await models.book.create({
-                  chapterNum,
-                  chapterTitle,
-                  originRowNum: row,
-                  originParagraph: paragraph,
-                  lastSnapshotDate: moment().format('YYYY-MM-DD HH:mm:ss')
-                })
+                if (flag) {
+                  await models.book.create({
+                    chapterNum,
+                    chapterTitle,
+                    originRowNum: row,
+                    originParagraph: paragraph,
+                    lastSnapshotDate: moment().format('YYYY-MM-DD HH:mm:ss')
+                  })
+                }
               }
               // 如果本段落需要翻译，则翻译，并记录数据库，并更新到原文段落里
               /**
@@ -125,7 +131,9 @@ const main = async () => {
 
       }
       logger.debug(`the translation of ${chapterNum} - ${chapterTitle} is completed!`)
-      fs.writeFileSync(filePath, JSON.stringify(content, null, 2))
+      if (flag) {
+        fs.writeFileSync(filePath, JSON.stringify(content, null, 2))        
+      }
       // process.exit(0)
     }
   }
