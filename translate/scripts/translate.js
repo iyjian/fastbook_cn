@@ -114,8 +114,8 @@ const main = async () => {
         }
 
       }
-      logger.debug('terminated')
-      // fs.writeFileSync(path.join(__dirname, './test.ipynb'), JSON.stringify(content, null, 2))
+      logger.debug(`the translation of ${chapterNum} - ${chapterTitle} is completed!`)
+      fs.writeFileSync(filePath, JSON.stringify(content, null, 2))
       // process.exit(0)
     }
   }
