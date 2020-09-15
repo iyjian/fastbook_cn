@@ -59,16 +59,26 @@ const main = async () => {
                * 但是如果看到*不含【机器翻译】*字样结尾的段落表示此段落是人工翻译的，需要更新到原文段落中。
                */
               if (!/\[机器翻译\]\n{0,}$/.test(paragraph)) {
-                logger.debug(`----------\nnewManualTranslate \norigin: ${lastParagraph} \ntranslate: ${paragraph}\n----------`)
-                await models.book.update({
-                  manualTranslate: paragraph
-                }, {
+                const recordParagraph = await models.book.findOne({
                   where: {
                     originParagraph: lastParagraph
                   }
                 })
+                if (recordParagraph && recordParagraph.manualTranslate === paragraph) {
+                  // 如果翻译过了就不翻译了
+                  logger.trace(`old manual translate`)
+                } else if (lastParagraph) {
+                  logger.debug(`----------\nnewManualTranslate \norigin: ${lastParagraph} \ntranslate: ${paragraph}\n----------`)
+                  await models.book.update({
+                    manualTranslate: paragraph
+                  }, {
+                    where: {
+                      originParagraph: lastParagraph
+                    }
+                  })                  
+                }
               }
-
+              paragraph = ''
               lastParagraph = undefined
             } else {
               // 如果不是中文段落，那就是原文，先记录下来再说哦
