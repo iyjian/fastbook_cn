@@ -6,7 +6,7 @@ const Translate = require('./../libs/Translate')
 const _ = require('lodash')
 const logger = require('./../libs/Logger').getLogger('api')
 
-const flag = process.argv[1]
+const flag = process.argv[2]
 
 const main = async () => {
 
