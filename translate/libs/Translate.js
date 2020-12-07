@@ -26,24 +26,28 @@ const translated = async originParagraph => {
   }
 }
 
+/**
+ * 统计翻译字数
+ *  分别统计机器翻译和手工翻译的字数
+*/
 exports.stat = async () => {
   const rows = await models.book.findAll()
-  // let originWords = 0, machineTranslateWords= 0, manualTranslateWords = 0
   const stat = {
 
   }
   for (let row of rows) {
-    const {originParagraph, machineTranslate, manualTranslate, chapterTitle} = row
-    if (!(chapterTitle in stat)) {
-      stat[chapterTitle] = {
+    const {originParagraph, machineTranslate, manualTranslate, chapterTitle, chapterNum} = row
+    const chapter = `${chapterNum}.${chapterTitle}`
+    if (!(chapter in stat)) {
+      stat[chapter] = {
         originWords: 0,
         machineTranslateWords: 0,
         manualTranslateWords: 0
       }
     }
-    stat[chapterTitle].originWords += originParagraph.split(/\s+/).map(o => o.replace(/[^\w]/g, '')).filter(o => o).length
-    if (machineTranslate) stat[chapterTitle].machineTranslateWords += machineTranslate.replace(/`~!@#$%\^&\*\(\)_\+=-\\;'":\/\.\,<>\?/g, '').length
-    if (manualTranslate) stat[chapterTitle].manualTranslateWords += manualTranslate.length
+    stat[chapter].originWords += originParagraph.split(/\s+/).map(o => o.replace(/[^\w]/g, '')).filter(o => o).length
+    if (machineTranslate) stat[chapter].machineTranslateWords += machineTranslate.replace(/`~!@#$%\^&\*\(\)_\+=-\\;'":\/\.\,<>\?/g, '').length
+    if (manualTranslate) stat[chapter].manualTranslateWords += manualTranslate.length
   }
   return stat
 }
