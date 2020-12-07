@@ -100,5 +100,4 @@ if (isDryRun !== 'true' && isDryRun !== 'false') {
   process.exit(1)
 }
 
-process.exit(0)
 main(isDryRun)
