@@ -6,6 +6,10 @@ const Translate = require('../libs/Translate')
 const _ = require('lodash')
 const logger = require('../libs/Logger').getLogger('api')
 
+const flag = process.argv[2]
+const allowRecordNew = process.argv[3]
+const allowMachineTranslate = process.argv[4]
+
 const main = async () => {
 
   const BOOK_PATH = './../../'
@@ -61,7 +65,7 @@ const main = async () => {
               if (!/\[机器翻译\]\n{0,}$/.test(paragraph)) {
                 const recordParagraph = await models.book.findOne({
                   where: {
-                    originParagraph: lastParagraph
+                    originParagraph: lastParagraph.trim()
                   }
                 })
                 if (recordParagraph && recordParagraph.manualTranslate === paragraph) {
@@ -78,7 +82,7 @@ const main = async () => {
                       manualTranslate: paragraph
                     }, {
                       where: {
-                        originParagraph: lastParagraph
+                        originParagraph: lastParagraph.trim()
                       }
                     })
                   }               
@@ -144,8 +148,9 @@ const main = async () => {
 
 }
 
-const flag = process.argv[2]
-const allowRecordNew = process.argv[3]
-const allowMachineTranslate = process.argv[4]
-
+// const flag = process.argv[2]
+// const allowRecordNew = process.argv[3]
+// const allowMachineTranslate = process.argv[4]
+// console.log(flag, '------')
+// process.exit(0)
 main()
