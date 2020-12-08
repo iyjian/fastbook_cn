@@ -1,12 +1,10 @@
 const fs = require('fs')
 const path = require('path')
 const moment = require('moment')
-const models = require('./../models')
-const Translate = require('./../libs/Translate')
+const models = require('../models')
+const Translate = require('../libs/Translate')
 const _ = require('lodash')
-const logger = require('./../libs/Logger').getLogger('api')
-
-const flag = process.argv[2]
+const logger = require('../libs/Logger').getLogger('api')
 
 const main = async () => {
 
@@ -70,7 +68,11 @@ const main = async () => {
                   // 如果翻译过了就不翻译了
                   logger.trace(`old manual translate`)
                 } else if (lastParagraph) {
-                  logger.debug(`----------\nnewManualTranslate \norigin: ${lastParagraph} \ntranslate: ${paragraph}\n----------`)
+                  // logger.debug(`----------\nnewManualTranslate \norigin: ${lastParagraph} \ntranslate: ${paragraph}\n----------`)
+                  console.log(`---------------------------检测到人工翻译${chapterNum}.${chapterTitle}(${row})------------------`)
+                  console.log(`原文: ${lastParagraph}\n`)
+                  console.log(`译文: ${paragraph}`)
+                  console.log('----------------------------------------------------------------------\n\n')                  
                   if (flag) {
                     await models.book.update({
                       manualTranslate: paragraph
@@ -88,17 +90,19 @@ const main = async () => {
               // 如果不是中文段落，那就是原文，先记录下来再说哦
               const isExist = await models.book.findOne({
                 where: {
-                  originParagraph: paragraph
+                  originParagraph: paragraph.trim()
                 }
               })
               if (!isExist) {
-                logger.debug(`newParagraph - captured - ${paragraph}`)
-                if (flag) {
+                console.log(`---------------------------检测到新段落${chapterNum}.${chapterTitle}(${row})------------------`)
+                console.log(`译文: ${paragraph}`)
+                console.log('----------------------------------------------------------------------\n\n')
+                if (flag && allowRecordNew) {
                   await models.book.create({
                     chapterNum,
                     chapterTitle,
                     originRowNum: row,
-                    originParagraph: paragraph,
+                    originParagraph: paragraph.trim(),
                     lastSnapshotDate: moment().format('YYYY-MM-DD HH:mm:ss')
                   })
                 }
@@ -131,7 +135,7 @@ const main = async () => {
 
       }
       logger.debug(`the translation of ${chapterNum} - ${chapterTitle} is completed!`)
-      if (flag) {
+      if (flag && allowMachineTranslate) {
         fs.writeFileSync(filePath, JSON.stringify(content, null, 2))        
       }
       // process.exit(0)
@@ -139,5 +143,9 @@ const main = async () => {
   }
 
 }
+
+const flag = process.argv[2]
+const allowRecordNew = process.argv[3]
+const allowMachineTranslate = process.argv[4]
 
 main()
