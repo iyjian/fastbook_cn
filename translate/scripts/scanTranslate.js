@@ -63,6 +63,9 @@ const main = async () => {
                * 但是如果看到*不含【机器翻译】*字样结尾的段落表示此段落是人工翻译的，需要更新到原文段落中。
                */
               if (!/\[机器翻译\]\n{0,}$/.test(paragraph)) {
+                if (!lastParagraph) {
+                  console.log(`-----------------------翻译没找到原文：${paragraph}-------------------------------------------`)
+                }
                 const recordParagraph = await models.book.findOne({
                   where: {
                     originParagraph: lastParagraph.trim()
