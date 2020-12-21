@@ -6,9 +6,10 @@ const Translate = require('../libs/Translate')
 const _ = require('lodash')
 const logger = require('../libs/Logger').getLogger('api')
 
-const flag = process.argv[2]
-const allowRecordNew = process.argv[3]
-const allowMachineTranslate = process.argv[4]
+const chaper = parseInt(process.argv[2])
+const flag = process.argv[3]
+const allowRecordNew = process.argv[4]
+const allowMachineTranslate = process.argv[5]
 
 const main = async () => {
 
@@ -24,6 +25,11 @@ const main = async () => {
 
       const chapterNum = matches[1]
       const chapterTitle = matches[2]
+
+      if (parseInt(chapterNum) !== chaper) {
+        console.log(`skip chapter: ${chapterNum}`)
+        continue
+      }
 
       const filePath = path.join(__dirname, `${BOOK_PATH}/${file}`)
 
@@ -64,7 +70,9 @@ const main = async () => {
                */
               if (!/\[机器翻译\]\n{0,}$/.test(paragraph)) {
                 if (!lastParagraph) {
-                  console.log(`-----------------------翻译没找到原文：${paragraph}-------------------------------------------`)
+                  console.log(`-----------------------翻译没找到原文开始-------------------------------------------`)
+                  console.log(`${paragraph}`)
+                  console.log(`-----------------------翻译没找到原文结束-------------------------------------------`)
                 }
                 const recordParagraph = await models.book.findOne({
                   where: {
