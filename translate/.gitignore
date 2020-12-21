@@ -3,3 +3,5 @@ logs/*
 !logs/.keep
 .env
 scripts/test.ipynb
+translatedOutput/
+!translatedOutput/.keep
