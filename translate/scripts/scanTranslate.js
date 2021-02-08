@@ -164,4 +164,11 @@ const main = async () => {
 // const allowMachineTranslate = process.argv[4]
 // console.log(flag, '------')
 // process.exit(0)
+
+/**
+ * 
+ * node translate/scripts/scanTranslate.js 2 
+ * 记录下手工翻译
+ * node translate/scripts/scanTranslate.js 2 true
+*/
 main()
