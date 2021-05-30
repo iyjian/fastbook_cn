@@ -7,3 +7,5 @@ node translateProfile.js
 ## 把翻译内容导出为文本
 
 
+翻译价格：千字100
+
